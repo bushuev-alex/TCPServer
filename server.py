@@ -11,14 +11,14 @@ class TCPServer:
         self.address = (self.server, self.port)
         self.socket_server = None
 
-    def create_tcp_server(self):
+    def create_tcp_server(self) -> None:
         self.socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket_server.bind(self.address)
         self.socket_server.listen()
         print(f'Server is launched at {self.server}:{self.port}')
         print("To stop server press 'Ctrl+C' or receive 'Stop server' from client")
 
-    def check_re(self, data):
+    def check_re(self, data: str) -> re.Match | bool:
         # Формат входных данных "BBBB NN HH:MM:SS.zhq GG\r"
         pattern = """
         (\d\d\d\d)\                 # BBBB (sportsmen_no)
@@ -35,7 +35,7 @@ class TCPServer:
         else:
             return False
 
-    def get_data(self):
+    def get_data(self) -> bool:
         connection, address = self.socket_server.accept()
         print(f"New connection from {address}")
 
@@ -60,49 +60,8 @@ class TCPServer:
             print("Wrong format data")
             return True
 
-    def write_to_log(self, *data):
+    def write_to_log(self, *data) -> None:
         sportsmen_no, channel_id, time, group_no = data
         with open("log.txt", 'a') as f:
             print(f"{sportsmen_no} {channel_id} {time[:-2]} {group_no}\r"
                   f"спортсмен, нагрудный номер {sportsmen_no} прошёл отсечку {channel_id} в {time[:-2]}", file=f)
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument("address", help="Your machine IPv4 address (something like 192.168.100.6)")
-parser.add_argument("port", help="Port number, best practice to use number in range 49152-65535")
-args = parser.parse_args()
-
-
-tcp_server = TCPServer(args.address, args.port)
-tcp_server.create_tcp_server()
-while True:
-    if not tcp_server.get_data():
-        break
-tcp_server.socket_server.close()
-
-
-# Пример клиента, отсылающего запрос к серверу
-"""
-import socket
-
-SOCKET_ADDRESS = ('192.168.100.6', 9090)
-MESSAGE = "0012 C1 01:13:02.877 00\r"
-
-my_socket = socket.socket()
-my_socket.connect(SOCKET_ADDRESS)
-my_socket.send(MESSAGE.encode())
-my_socket.close() 
-"""
-
-
-# Пример клиента, отсылающего запрос к серверу (используем модуль telnetlib)
-"""
-from telnetlib import Telnet
-MESSAGE_1 = "0012 C1 23:59:59.009 00\r"  # correct data
-MESSAGE_2 = "0012 C1 51:13:02.877 00\r"  # incorrect data
-MESSAGE_3 = "Stop server"                # command to stop server
-
-telnet = Telnet('192.168.100.6', port=9090)
-telnet.write(MESSAGE_1.encode())
-print(telnet.read_all().decode()) 
-"""
